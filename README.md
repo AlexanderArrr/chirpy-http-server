@@ -1,0 +1,1 @@
+This is my HTTP server project for the "Learn HTTP Servers in Go" course from Boot.dev!

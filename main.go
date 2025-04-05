@@ -43,9 +43,9 @@ func main() {
 
 	srvMux := http.NewServeMux()
 	srvMux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
-	srvMux.HandleFunc("/healthz", handlerReadiness)
-	srvMux.HandleFunc("/metrics", apiCfg.handlerMetrics)
-	srvMux.HandleFunc("/reset", apiCfg.handlerReset)
+	srvMux.HandleFunc("GET /healthz", handlerReadiness)
+	srvMux.HandleFunc("GET /metrics", apiCfg.handlerMetrics)
+	srvMux.HandleFunc("POST /reset", apiCfg.handlerReset)
 
 	srv := &http.Server{
 		Addr:    "localhost:" + port,

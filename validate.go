@@ -38,8 +38,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func cleanChirp(body string) string {
-	var profanity []string
-	profanity = append(profanity, "kerfuffle", "sharbert", "fornax")
+	profanity := []string{"kerfuffle", "sharbert", "fornax"}
 	splitString := strings.Split(body, " ")
 	for i, ch := range splitString {
 		for _, prof := range profanity {

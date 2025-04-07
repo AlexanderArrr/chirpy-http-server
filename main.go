@@ -34,6 +34,7 @@ func main() {
 	srvMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	srvMux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 	srvMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
+	srvMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp)
 
 	srv := &http.Server{
 		Addr:    "localhost:" + port,

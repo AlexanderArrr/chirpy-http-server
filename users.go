@@ -65,8 +65,9 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string        `json:"email"`
+		Password         string        `json:"password"`
+		ExpiresInSeconds time.Duration `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -89,11 +90,29 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var expirationTime time.Duration
+	if params.ExpiresInSeconds == 0 {
+		expirationTime = time.Hour
+	} else if params.ExpiresInSeconds > time.Hour {
+		expirationTime = time.Hour
+	} else if params.ExpiresInSeconds < 0 {
+		respondWithError(w, http.StatusBadRequest, "Invalid expiration time", nil)
+		return
+	} else {
+		expirationTime = params.ExpiresInSeconds * time.Second
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, expirationTime)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while creating auth token", err)
+	}
+
 	type returnVals struct {
 		Id         uuid.UUID `json:"id"`
 		Created_at time.Time `json:"created_at"`
 		Updated_at time.Time `json:"updated_at"`
 		Email      string    `json:"email"`
+		Token      string    `json:"token"`
 	}
 
 	respondWithJSON(w, http.StatusOK, returnVals{
@@ -101,5 +120,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		Created_at: user.CreatedAt,
 		Updated_at: user.UpdatedAt,
 		Email:      user.Email,
+		Token:      token,
 	})
 }

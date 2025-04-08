@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexanderarrr/chirpy-http-server/internal/auth"
 	"github.com/alexanderarrr/chirpy-http-server/internal/database"
 	"github.com/google/uuid"
 )
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body    string    `json:"body"`
-		User_id uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	type returnVals struct {
@@ -24,9 +24,21 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		User_id    uuid.UUID `json:"user_id"`
 	}
 
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Missing/invalid header", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.tokenSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Missing/invalid header", err)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters: %v", err)
 		return
@@ -42,11 +54,11 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 	chirpParams := database.CreateChirpParams{
 		Body:   cleanedBody,
-		UserID: params.User_id,
+		UserID: userID,
 	}
 	chirp, err := cfg.dbQueries.CreateChirp(r.Context(), chirpParams)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error while creating user: %v", err)
+		respondWithError(w, http.StatusBadRequest, "Error while creating chirp: %v", err)
 		return
 	}
 

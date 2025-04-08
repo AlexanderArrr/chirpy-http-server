@@ -23,8 +23,13 @@ func main() {
 		return
 	}
 	platform := os.Getenv("PLATFORM")
+	tokenSecret := os.Getenv("TOKEN_SECRET")
 
-	apiCfg := &apiConfig{dbQueries: *database.New(db), platform: platform}
+	apiCfg := &apiConfig{
+		dbQueries:   *database.New(db),
+		platform:    platform,
+		tokenSecret: tokenSecret,
+	}
 
 	srvMux := http.NewServeMux()
 	srvMux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))

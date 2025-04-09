@@ -38,6 +38,8 @@ func main() {
 	srvMux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 	srvMux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 	srvMux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
+	srvMux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
+	srvMux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 	srvMux.HandleFunc("POST /api/chirps", apiCfg.handlerCreateChirp)
 	srvMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	srvMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp)

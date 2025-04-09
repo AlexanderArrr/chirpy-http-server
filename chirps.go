@@ -40,7 +40,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	params := parameters{}
 	err = decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	}
 	chirp, err := cfg.dbQueries.CreateChirp(r.Context(), chirpParams)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Error while creating chirp: %v", err)
+		respondWithError(w, http.StatusBadRequest, "Error while creating chirp", err)
 		return
 	}
 
@@ -96,7 +96,7 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 
 	chirps, err := cfg.dbQueries.GetChirps(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error while getting chirps: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Error while getting chirps", err)
 		return
 	}
 
@@ -116,17 +116,16 @@ func (cfg *apiConfig) handlerGetChirps(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
-
 	chirpIDString := r.PathValue("chirpID")
 	chirpID, err := uuid.Parse(chirpIDString)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID: %v", err)
+		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID", err)
 		return
 	}
 
 	chirp, err := cfg.dbQueries.GetChirp(r.Context(), chirpID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Could not get chirp: %v", err)
+		respondWithError(w, http.StatusNotFound, "Could not get chirp", err)
 		return
 	}
 
@@ -146,4 +145,46 @@ func (cfg *apiConfig) handlerGetChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK, response)
+}
+
+func (cfg *apiConfig) handlerDeleteChirp(w http.ResponseWriter, r *http.Request) {
+	accessTokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Missing access token in header", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(accessTokenString, cfg.tokenSecret)
+	if err != nil {
+		respondWithError(w, http.StatusForbidden, "FORBIDDEN! Wrong access token", err)
+		return
+	}
+
+	chirpID, err := uuid.Parse(r.PathValue("chirpID"))
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while parsing chirp ID", err)
+		return
+	}
+
+	chirp, err := cfg.dbQueries.GetChirp(r.Context(), chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusNotFound, "Specified chirp does not exist", err)
+		return
+	}
+
+	if chirp.UserID != userID {
+		respondWithError(w, http.StatusForbidden, "You can only delete your own chirps", err)
+		return
+	}
+
+	err = cfg.dbQueries.DeleteChirp(r.Context(), database.DeleteChirpParams{
+		ID:     chirp.ID,
+		UserID: userID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error while deleting chirp", err)
+		return
+	}
+
+	w.WriteHeader(204)
 }

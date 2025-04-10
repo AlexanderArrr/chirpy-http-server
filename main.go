@@ -24,11 +24,13 @@ func main() {
 	}
 	platform := os.Getenv("PLATFORM")
 	tokenSecret := os.Getenv("TOKEN_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	apiCfg := &apiConfig{
 		dbQueries:   *database.New(db),
 		platform:    platform,
 		tokenSecret: tokenSecret,
+		polkaKey:    polkaKey,
 	}
 
 	srvMux := http.NewServeMux()
@@ -45,6 +47,7 @@ func main() {
 	srvMux.HandleFunc("GET /api/chirps", apiCfg.handlerGetChirps)
 	srvMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerGetChirp)
 	srvMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.handlerDeleteChirp)
+	srvMux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerWebhook)
 
 	srv := &http.Server{
 		Addr:    "localhost:" + port,
